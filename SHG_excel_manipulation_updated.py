@@ -10,9 +10,9 @@ import os
 import pandas as pd
 
 #Ask User Heart and Location to fetch dataset and later create excel sheet with series name
-heart = 'H1'#input("Heart #: ")
-ltn = 'V1'#input("Location #: ")
-con = 'ctrl'#input("Condition of Heart (ex. ctrl, blebb): ")
+heart = input("Heart #: ")
+ltn = input("Location #: ")
+con = input("Condition of Heart (ex. ctrl, blebb): ")
 
 #Set working directory
 os.chdir(r"C:\Users\natha\Desktop\CEMB Summer Program 2021\Discher Lab\Ex-vivo chick heart experiments\Experiments\Karan\SHG Analysis\{c}\{h}\{s}".format(c = con, h = heart, s = heart + ltn ))
@@ -33,7 +33,7 @@ dataT = dataO[ ["T1", "T2", "T3"] ].sub(dataBavg['B_avg'], axis=0)
 
 #Add channel column, recreates channelwise parsing of image to measure data points
 numCh = 9
-Z_slices = 24#int(input('Number of Z slices: '))
+Z_slices = int(input('Number of Z slices: '))
 total = numCh*Z_slices
 rows = []
 
@@ -117,8 +117,6 @@ for key, df in channels5.items():
     channels[key] = pd.concat([channels[key],df1], ignore_index= False, axis=1)
 
 
-
-
 #Add column T_Favg, average of ROI averages
 for key, df in channels.items():
     df1 = pd.DataFrame([df['T_avgs'].mean()], columns=['T_Favg'])
@@ -134,12 +132,7 @@ for key, df in channels.items():
 
 
 
-
-
-#Make col charts dictionary to hold 920,860nm ratio & Bkwd,Fwd ratio pandas
-colCharts = {}
-
-#Make Panda for col chart (920,860nm ratio) and 920,860nm ratio dictionary
+#Make Panda for col chart (920,860nm) and 920,860nm dictionary
 channels920_860 = {'channel_1':'channel_5', 'channel_2':'channel_6','channel_3':'channel_7','channel_4':'channel_8'}
 blank4x5 = [[None,None,None,None],[None,None,None,None],[None,None,None,None],[None,None,None,None],[None,None,None,None]]
 colChart920_860data = pd.DataFrame(blank4x5, columns= ['5% Bkwd','5% Fwd','35% Bkwd','35% Fwd'])
@@ -178,26 +171,45 @@ colChart920_860data['35% Fwd'][4] = ttest_ind(channels['channel_4']['T_avgs'][0:
 colChart920_860data = colChart920_860data.rename(index= {0:'920nm_T_Favg', 1:'860nm_T_Favg', 2:'920nm_SEM', 3:'860nm_SEM', 4: 'P_value'})
 
     
-    
-'''
-for col in colChart920_860data:
-    #fetch T_Favg and place in colchart920_860 panda
-    for k920,k860 in channels920_860.items():
-        # colChart920_860data[col][0] = channels[k860]['T_Favg'][0]
-        # colChart920_860data[col][1] = channels[k920]['T_Favg'][0]
-        print(col, channels[k860]['T_Favg'][0], k860, k920)
 
-        
-    # #fetch T_SEM and place in colchart920_860 panda
-    # for k920,k860 in channels920_860.items():
-    #     colChart920_860data[col][2] = channels[k860]['T_SEM'][0]
-    #     colChart920_860data[col][3] = channels[k920]['T_SEM'][0]        
-    
-    #Perform two tailed T-test, unequal variance between 3 averages of T_avgs
-    # for k920,k860 in channels920_860.items():
-    #     colChart920_860data[col][4] = ttest_ind(channels[k920]['T_avgs'][0:3], channels[k860]['T_avgs'][0:3])[1]
-    colChart920_860data= colChart920_860data.rename( index= {0:'920nm_T_Favg', 1:'860nm_T_Favg', 2:'920nm_SEM', 3:'860nm_SEM', 4: 'P_value'})
-'''
+#Make Bkwd-Fwd comparison charts
+channelsBkwd_Fwd = {'channel_1':'channel_2', 'channel_3':'channel_4','channel_5':'channel_6','channel_7':'channel_8'}
+colChartBkwd_Fwd_data = pd.DataFrame(blank4x5, columns= ['5% 920nm','35% 920nm','5% 860nm','35% 860nm'])
+
+colChartBkwd_Fwd_data['5% 920nm'][0] = channels['channel_1']['T_Favg'][0]
+colChartBkwd_Fwd_data['5% 920nm'][1] = channels['channel_2']['T_Favg'][0]
+
+colChartBkwd_Fwd_data['35% 920nm'][0] = channels['channel_3']['T_Favg'][0]
+colChartBkwd_Fwd_data['35% 920nm'][1] = channels['channel_4']['T_Favg'][0]
+
+colChartBkwd_Fwd_data['5% 860nm'][0] = channels['channel_5']['T_Favg'][0]
+colChartBkwd_Fwd_data['5% 860nm'][1] = channels['channel_6']['T_Favg'][0]
+
+colChartBkwd_Fwd_data['35% 860nm'][0] = channels['channel_7']['T_Favg'][0]
+colChartBkwd_Fwd_data['35% 860nm'][1] = channels['channel_8']['T_Favg'][0]
+
+#SEM
+colChartBkwd_Fwd_data['5% 920nm'][2] = channels['channel_1']['T_SEM'][0]
+colChartBkwd_Fwd_data['5% 920nm'][3] = channels['channel_2']['T_SEM'][0]
+
+colChartBkwd_Fwd_data['35% 920nm'][2] = channels['channel_3']['T_SEM'][0]
+colChartBkwd_Fwd_data['35% 920nm'][3] = channels['channel_4']['T_SEM'][0]
+
+colChartBkwd_Fwd_data['5% 860nm'][2] = channels['channel_5']['T_SEM'][0]
+colChartBkwd_Fwd_data['5% 860nm'][3] = channels['channel_6']['T_SEM'][0]
+
+colChartBkwd_Fwd_data['35% 860nm'][2] = channels['channel_7']['T_SEM'][0]
+colChartBkwd_Fwd_data['35% 860nm'][3] = channels['channel_8']['T_SEM'][0]
+
+
+#Perform two tailed T-test, unequal variance between 3 averages of T_avgs
+colChartBkwd_Fwd_data['5% 920nm'][4] = ttest_ind(channels['channel_1']['T_avgs'][0:3], channels['channel_2']['T_avgs'][0:3], equal_var= False)[1]
+colChartBkwd_Fwd_data['35% 920nm'][4] = ttest_ind(channels['channel_3']['T_avgs'][0:3], channels['channel_4']['T_avgs'][0:3], equal_var= False)[1]
+colChartBkwd_Fwd_data['5% 860nm'][4] = ttest_ind(channels['channel_5']['T_avgs'][0:3], channels['channel_6']['T_avgs'][0:3], equal_var= False)[1]
+colChartBkwd_Fwd_data['35% 860nm'][4] = ttest_ind(channels['channel_7']['T_avgs'][0:3], channels['channel_8']['T_avgs'][0:3], equal_var= False)[1]
+colChartBkwd_Fwd_data = colChartBkwd_Fwd_data.rename(index= {0:'Bkwd', 1:'Fwd', 2:'Bkwd_SEM', 3:'Fwd_SEM', 4: 'P_value'})
+
+
 ##########
 ##########
 ##########
@@ -207,23 +219,62 @@ for col in colChart920_860data:
 writer = pd.ExcelWriter('E5_{s}_{c}_FA_fixed_analysis.xlsx'.format(s = heart + ltn, c = con))
 workbook = writer.book
 
+#Create sheet for Fwd,Bkwd col chart, can't do Chartsheet bc of p-values
+colChartBkwd_Fwd_data.to_excel(excel_writer = writer, sheet_name = 'FwdvsBkwd' , index = True)
+chartsheet0 =writer.sheets['FwdvsBkwd']
+
+#create chart object for 920,860nm charts
+colChartBkwd_Fwd = workbook.add_chart({'type': 'column'})
+
+#save length of values length in colChartBkwd_Fwd_data panda
+col_y_Bkwd_Fwd = len(colChartBkwd_Fwd_data.columns)
+
+#Add 920 series from colChartBkwd_Fwd_data to colChartBkwd_Fwd object
+colChartBkwd_Fwd.add_series({
+    'name':       'Bkwd',
+    'categories': ['FwdvsBkwd', 0, 1, 0, col_y_Bkwd_Fwd],
+    'values':     ['FwdvsBkwd', 1, 1, 1, col_y_Bkwd_Fwd],
+    'y_error_bars': {
+        'type':         'custom',
+        'plus_values':  list(colChartBkwd_Fwd_data.iloc[2]),
+        'minus_values': list(colChartBkwd_Fwd_data.iloc[2]),}
+})
+
+#Add 860 series from colChartBkwd_Fwd_data to colChartBkwd_Fwd object
+colChartBkwd_Fwd.add_series({
+    'name':       'Fwd',
+    'categories': ['FwdvsBkwd', 0, 1, 0, col_y_Bkwd_Fwd],
+    'values':     ['FwdvsBkwd', 2, 1, 2, col_y_Bkwd_Fwd],
+    'y_error_bars': {
+        'type':         'custom',
+        'plus_values':  list(colChartBkwd_Fwd_data.iloc[3]),
+        'minus_values': list(colChartBkwd_Fwd_data.iloc[3]),}
+})  
+
+# Set name on axis of colChartBkwd_Fwd object and insert to 920vs860nm sheet
+colChartBkwd_Fwd.set_title({'name': 'FwdvsBkwd'})
+colChartBkwd_Fwd.set_x_axis({'name': 'Groups'})
+colChartBkwd_Fwd.set_y_axis({'name': 'SHG signal',
+                  'major_gridlines': {'visible': True}})
+
+#Insert chartsheet
+chartsheet0.insert_chart('G2', colChartBkwd_Fwd)
+
+
 
 
 
 #Create sheet for 920,860nm col chart, can't do Chartsheet bc of p-values
-#
-
 colChart920_860data.to_excel(excel_writer = writer, sheet_name = '920vs860nm' , index = True)
-
 chartsheet1 =writer.sheets['920vs860nm']
 
+#create chart object for 920,860nm charts
 colChart920_860 = workbook.add_chart({'type': 'column'})
 
-#col_x_920v860 = #colChart920_860data.columns.get_loc('5% Bkwd') + 1
+#save length of values length in colChart920_860data panda
 col_y_920v860 = len(colChart920_860data.columns)
 
-
-
+#Add 920 series from colChart920_860data to colChart920_860 object
 colChart920_860.add_series({
     'name':       '920nm',
     'categories': ['920vs860nm', 0, 1, 0, col_y_920v860],
@@ -234,6 +285,7 @@ colChart920_860.add_series({
         'minus_values': list(colChart920_860data.iloc[2]),}
 })
 
+#Add 860 series from colChart920_860data to colChart920_860 object
 colChart920_860.add_series({
     'name':       '860nm',
     'categories': ['920vs860nm', 0, 1, 0, col_y_920v860],
@@ -244,7 +296,7 @@ colChart920_860.add_series({
         'minus_values': list(colChart920_860data.iloc[3]),}
 })  
 
-# Set name on axis
+# Set name on axis of colChart920_860 object and insert to 920vs860nm sheet
 colChart920_860.set_title({'name': '920vs860nm'})
 colChart920_860.set_x_axis({'name': 'Groups'})
 colChart920_860.set_y_axis({'name': 'SHG signal',
@@ -252,6 +304,9 @@ colChart920_860.set_y_axis({'name': 'SHG signal',
 
 #Insert chartsheet
 chartsheet1.insert_chart('G2', colChart920_860)
+
+
+
 
 #create sheets from channels dictionary and populate with channel 
 for key, df in channels.items():
@@ -294,6 +349,5 @@ for key, df in channels.items():
     # Insert the charts into the worksheet in field D2
     worksheet.insert_chart('I10', scatterChart)
         
-       
+#close excel file       
 writer.close()
-
