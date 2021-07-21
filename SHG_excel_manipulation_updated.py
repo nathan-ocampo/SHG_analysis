@@ -10,14 +10,17 @@ import os
 import pandas as pd
 
 #Ask User Heart and Location to fetch dataset and later create excel sheet with series name
-heart = input("Heart #: ")
-ltn = input("Location #: ")
-con = input("Condition of Heart (ex. ctrl, blebb): ")
+heart = 'H1'#input("Heart #: ")
+ltn = 'V1'#input("Location #: ")
+con = 'ctrl'#input("Condition of Heart (ex. ctrl, blebb): ")
 
 #Set working directory
 os.chdir(r"C:\Users\natha\Desktop\CEMB Summer Program 2021\Discher Lab\Ex-vivo chick heart experiments\Experiments\Karan\SHG Analysis\{c}\{h}\{s}".format(c = con, h = heart, s = heart + ltn ))
 
+#file path
 file = r"C:\Users\natha\Desktop\CEMB Summer Program 2021\Discher Lab\Ex-vivo chick heart experiments\Experiments\Karan\SHG Analysis\{c}\{h}\{s}\{c}_{s}_data.xlsx".format(c = con, h = heart, s = heart + ltn )
+
+
 #Data must have labels T1, T2, T3, B1, B2
 #Must be read in from imagej plugin, time series analyzer
 #Read Time Series Analyzer Data into Panda
@@ -33,7 +36,7 @@ dataT = dataO[ ["T1", "T2", "T3"] ].sub(dataBavg['B_avg'], axis=0)
 
 #Add channel column, recreates channelwise parsing of image to measure data points
 numCh = 9
-Z_slices = int(input('Number of Z slices: '))
+Z_slices = 24#int(input('Number of Z slices: '))
 total = numCh*Z_slices
 rows = []
 
@@ -210,6 +213,45 @@ colChartBkwd_Fwd_data['35% 860nm'][4] = ttest_ind(channels['channel_7']['T_avgs'
 colChartBkwd_Fwd_data = colChartBkwd_Fwd_data.rename(index= {0:'Bkwd', 1:'Fwd', 2:'Bkwd_SEM', 3:'Fwd_SEM', 4: 'P_value'})
 
 
+#Ratio panda (920,860nm)
+colChart920v860_Rdata = {'5% Bkwd': pd.DataFrame(None),'5% Fwd': pd.DataFrame(None),'35% Bkwd': pd.DataFrame(None),'35% Fwd': pd.DataFrame(None)}
+for column in channels['channel_1'][['T1','T2','T3']]:
+    colChart920v860_Rdata['5% Bkwd'][column]= channels['channel_1'][column]/channels['channel_5'][column]
+colChart920v860_Rdata['5% Bkwd'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+
+for column in channels['channel_2'][['T1','T2','T3']]:
+    colChart920v860_Rdata['5% Fwd'][column]= channels['channel_2'][column]/channels['channel_6'][column]
+colChart920v860_Rdata['5% Fwd'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+    
+for column in channels['channel_3'][['T1','T2','T3']]:
+    colChart920v860_Rdata['35% Bkwd'][column]= channels['channel_3'][column]/channels['channel_7'][column]
+colChart920v860_Rdata['35% Bkwd'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+    
+for column in channels['channel_4'][['T1','T2','T3']]:
+    colChart920v860_Rdata['35% Fwd'][column]= channels['channel_4'][column]/channels['channel_8'][column]
+colChart920v860_Rdata['35% Fwd'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+
+
+
+#Ratio panda (Fwd, Bkwd)
+colChartFwdvBkwd_Rdata = {'5% 920nm': pd.DataFrame(None),'35% 920nm': pd.DataFrame(None),'5% 860nm': pd.DataFrame(None),'35% 860nm': pd.DataFrame(None)}
+for column in channels['channel_1'][['T1','T2','T3']]:
+    colChartFwdvBkwd_Rdata['5% 920nm'][column]= channels['channel_1'][column]/channels['channel_2'][column]
+colChartFwdvBkwd_Rdata['5% 920nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+
+for column in channels['channel_2'][['T1','T2','T3']]:
+    colChartFwdvBkwd_Rdata['35% 920nm'][column]= channels['channel_3'][column]/channels['channel_4'][column]
+colChartFwdvBkwd_Rdata['35% 920nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+    
+for column in channels['channel_3'][['T1','T2','T3']]:
+    colChartFwdvBkwd_Rdata['5% 860nm'][column]= channels['channel_5'][column]/channels['channel_6'][column]
+colChartFwdvBkwd_Rdata['5% 860nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+    
+for column in channels['channel_4'][['T1','T2','T3']]:
+    colChartFwdvBkwd_Rdata['35% 860nm'][column]= channels['channel_7'][column]/channels['channel_8'][column]
+colChartFwdvBkwd_Rdata['35% 860nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])    
+        
+
 ##########
 ##########
 ##########
@@ -219,6 +261,7 @@ colChartBkwd_Fwd_data = colChartBkwd_Fwd_data.rename(index= {0:'Bkwd', 1:'Fwd', 
 writer = pd.ExcelWriter('E5_{s}_{c}_FA_fixed_analysis.xlsx'.format(s = heart + ltn, c = con))
 workbook = writer.book
 
+##########################################################################
 #Create sheet for Fwd,Bkwd col chart, can't do Chartsheet bc of p-values
 colChartBkwd_Fwd_data.to_excel(excel_writer = writer, sheet_name = 'FwdvsBkwd' , index = True)
 chartsheet0 =writer.sheets['FwdvsBkwd']
@@ -261,9 +304,7 @@ colChartBkwd_Fwd.set_y_axis({'name': 'SHG signal',
 chartsheet0.insert_chart('G2', colChartBkwd_Fwd)
 
 
-
-
-
+#######################################################################
 #Create sheet for 920,860nm col chart, can't do Chartsheet bc of p-values
 colChart920_860data.to_excel(excel_writer = writer, sheet_name = '920vs860nm' , index = True)
 chartsheet1 =writer.sheets['920vs860nm']
@@ -305,9 +346,42 @@ colChart920_860.set_y_axis({'name': 'SHG signal',
 #Insert chartsheet
 chartsheet1.insert_chart('G2', colChart920_860)
 
+#################################################
+#Create chartsheet for 920v860 data ratios
 
+#Insert Ratio 960v860nm into excel
+for key, df in colChart920v860_Rdata.items():
+    df.to_excel(excel_writer = writer, sheet_name = str(key), index = True)
+    
+    # Make worksheet object for each channel in channels dictionary
+    worksheet = writer.sheets[str(key)]
+    
+    # Create a scatter chart object, FOV-channel specific chart, int. vs depth
+    scatterChart = workbook.add_chart({'type': 'scatter', 'subtype': 'straight_with_markers'})
+    for column in df[['T1', 'T2','T3']]:
+        # Get the number of rows and column index
+        max_row = len(df)
+        col_x = df.columns.get_loc('Depth') + 1
+        col_y = df.columns.get_loc(column) + 1
+        
+        # Create the scatter plot with error cols if T_SEM is equal to something, if not don't add error
+        scatterChart.add_series({
+            'name':       column,
+            'categories': [str(key), 1, col_x, max_row, col_x],
+            'values':     [str(key), 1, col_y, max_row, col_y],
+            'marker':     {'type': 'circle', 'size': 4},
+        })
+            
+    # Set name on axis
+    scatterChart.set_title({'name': key})
+    scatterChart.set_x_axis({'name': 'Depth'})
+    scatterChart.set_y_axis({'name': 'SHG signal',
+                      'major_gridlines': {'visible': False}})
+    
+    # Insert the charts into the worksheet in field D2
+    worksheet.insert_chart('I10', scatterChart)
 
-
+#####################################
 #create sheets from channels dictionary and populate with channel 
 for key, df in channels.items():
     df.to_excel(excel_writer = writer, sheet_name = str(key), index = True)
