@@ -134,7 +134,6 @@ for key, df in channels.items():
 
 
 
-
 #Make Panda for col chart (920,860nm) and 920,860nm dictionary
 channels920_860 = {'channel_1':'channel_5', 'channel_2':'channel_6','channel_3':'channel_7','channel_4':'channel_8'}
 blank4x5 = [[None,None,None,None],[None,None,None,None],[None,None,None,None],[None,None,None,None],[None,None,None,None]]
