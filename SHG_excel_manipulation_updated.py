@@ -8,6 +8,7 @@ from scipy.stats import ttest_ind
 import math
 import os
 import pandas as pd
+import numpy as np
 
 #Ask User Heart and Location to fetch dataset and later create excel sheet with series name
 heart = 'H1'#input("Heart #: ")
@@ -230,6 +231,10 @@ for column in channels['channel_4'][['T1','T2','T3']]:
     colChart920v860_Rdata['35% Fwd'][column]= channels['channel_4'][column]/channels['channel_8'][column]
 colChart920v860_Rdata['35% Fwd'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
 
+for key, df in colChart920v860_Rdata.items():
+    #remove -inf and infs (less than -1B and greater than 1B )and replace with NAN
+    colChart920v860_Rdata[key] = df.mask(df < -1000000000.0 )
+    colChart920v860_Rdata[key] = colChart920v860_Rdata[key].mask(df > 1000000000.0 )
 
 
 #Ratio panda (Fwd, Bkwd)
@@ -248,7 +253,12 @@ colChartFwdvBkwd_Rdata['5% 860nm'].insert(column = 'Depth', loc = 0, value = cha
     
 for column in channels['channel_4'][['T1','T2','T3']]:
     colChartFwdvBkwd_Rdata['35% 860nm'][column]= channels['channel_7'][column]/channels['channel_8'][column]
-colChartFwdvBkwd_Rdata['35% 860nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])    
+colChartFwdvBkwd_Rdata['35% 860nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+
+for key, df in colChartFwdvBkwd_Rdata.items():
+    #remove -inf and infs (less than -1B and greater than 1B )and replace with NAN
+    colChartFwdvBkwd_Rdata[key] = df.mask(df < -1000000000.0 )
+    colChartFwdvBkwd_Rdata[key] = colChartFwdvBkwd_Rdata[key].mask(df > 1000000000.0 )
         
 
 ##########
