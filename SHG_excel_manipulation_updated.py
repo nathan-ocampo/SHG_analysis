@@ -8,7 +8,6 @@ from scipy.stats import ttest_ind
 import math
 import os
 import pandas as pd
-import numpy as np
 
 #Ask User Heart and Location to fetch dataset and later create excel sheet with series name
 heart = 'H1'#input("Heart #: ")
@@ -74,10 +73,11 @@ del channels['channel_9']
     
 
 #Adding characteristic mean for each ROI (new row), +/- 3 z slices of peak
-maxs2match = []
-channels35 = {'channel_3': pd.DataFrame(None),'channel_4': pd.DataFrame(None),'channel_7': pd.DataFrame(None),'channel_8': pd.DataFrame(None)}
+
+#Channels35 dict stores the index of max val for each ROI
+channels35_MaxVal = {'channel_3': pd.DataFrame(None),'channel_4': pd.DataFrame(None),'channel_7': pd.DataFrame(None),'channel_8': pd.DataFrame(None)}
 for key, df in channels.items():
-    if any(x in key for x in list(channels35.keys())):
+    if any(x in key for x in list(channels35_MaxVal.keys())):
         ROI_avgs = []
         for column in df[['T1', 'T2','T3']]:
                 min = int(df[[column]].idxmax() - 3)
@@ -90,21 +90,22 @@ for key, df in channels.items():
                       #append mean to channels dictionary
                       ROI_avgs.append(float(df[[column]].iloc[min2max].mean(axis=0)))
                       
-                      #set channels35 key equal to new df with ROI name and max value index
+                      #set channels35_MaxVal key equal to new df with ROI name and max value index
                       df1 = pd.DataFrame([int(df[[column]].idxmax())], columns = [column])
-                      channels35[key] = pd.concat([channels35[key],df1], ignore_index= False, axis=1)
+                      channels35_MaxVal[key] = pd.concat([channels35_MaxVal[key],df1], ignore_index= False, axis=1)
                 else:
                       ROI_avgs.append(math.nan)
                       
-                      #set channels35 key equal to new df with ROI name
+                      #set channels35_MaxVal key equal to new df with ROI name
                       df1 = pd.DataFrame(None, columns = [column])
-                      channels35[key] = pd.concat([channels35[key],df1], ignore_index= False, axis=1)
+                      channels35_MaxVal[key] = pd.concat([channels35_MaxVal[key],df1], ignore_index= False, axis=1)
                       
                       
         df1 = pd.DataFrame(ROI_avgs, columns = ['T_avgs'])
         channels[key] = pd.concat([df,df1], ignore_index= False, axis=1)
 
-channels5 = {'channel_1': channels35['channel_3'],'channel_2': channels35['channel_4'],'channel_5': channels35['channel_7'],'channel_6': channels35['channel_8']}
+#Channels5 dict stores the index of max val for each ROI
+channels5 = {'channel_1': channels35_MaxVal['channel_3'],'channel_2': channels35_MaxVal['channel_4'],'channel_5': channels35_MaxVal['channel_7'],'channel_6': channels35_MaxVal['channel_8']}
 
 for key, df in channels5.items():
     ROI_avgs = []
@@ -215,6 +216,7 @@ colChartBkwd_Fwd_data = colChartBkwd_Fwd_data.rename(index= {0:'Bkwd', 1:'Fwd', 
 
 #Ratio panda (920,860nm)
 colChart920v860_Rdata = {'5% Bkwd': pd.DataFrame(None),'5% Fwd': pd.DataFrame(None),'35% Bkwd': pd.DataFrame(None),'35% Fwd': pd.DataFrame(None)}
+#Divide 920 channels by 860 and add depth column from channel_1 in channels dic
 for column in channels['channel_1'][['T1','T2','T3']]:
     colChart920v860_Rdata['5% Bkwd'][column]= channels['channel_1'][column]/channels['channel_5'][column]
 colChart920v860_Rdata['5% Bkwd'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
@@ -239,20 +241,21 @@ for key, df in colChart920v860_Rdata.items():
 
 #Ratio panda (Fwd, Bkwd)
 colChartFwdvBkwd_Rdata = {'5% 920nm': pd.DataFrame(None),'35% 920nm': pd.DataFrame(None),'5% 860nm': pd.DataFrame(None),'35% 860nm': pd.DataFrame(None)}
+#Divide Fwd channels by Bkwd and add depth column from channel_1 in channels dic
 for column in channels['channel_1'][['T1','T2','T3']]:
-    colChartFwdvBkwd_Rdata['5% 920nm'][column]= channels['channel_1'][column]/channels['channel_2'][column]
+    colChartFwdvBkwd_Rdata['5% 920nm'][column]= channels['channel_2'][column]/channels['channel_1'][column]
 colChartFwdvBkwd_Rdata['5% 920nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
 
 for column in channels['channel_2'][['T1','T2','T3']]:
-    colChartFwdvBkwd_Rdata['35% 920nm'][column]= channels['channel_3'][column]/channels['channel_4'][column]
+    colChartFwdvBkwd_Rdata['35% 920nm'][column]= channels['channel_4'][column]/channels['channel_3'][column]
 colChartFwdvBkwd_Rdata['35% 920nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
     
 for column in channels['channel_3'][['T1','T2','T3']]:
-    colChartFwdvBkwd_Rdata['5% 860nm'][column]= channels['channel_5'][column]/channels['channel_6'][column]
+    colChartFwdvBkwd_Rdata['5% 860nm'][column]= channels['channel_6'][column]/channels['channel_5'][column]
 colChartFwdvBkwd_Rdata['5% 860nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
     
 for column in channels['channel_4'][['T1','T2','T3']]:
-    colChartFwdvBkwd_Rdata['35% 860nm'][column]= channels['channel_7'][column]/channels['channel_8'][column]
+    colChartFwdvBkwd_Rdata['35% 860nm'][column]= channels['channel_8'][column]/channels['channel_7'][column]
 colChartFwdvBkwd_Rdata['35% 860nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
 
 for key, df in colChartFwdvBkwd_Rdata.items():
@@ -270,6 +273,8 @@ for key, df in colChartFwdvBkwd_Rdata.items():
 writer = pd.ExcelWriter('E5_{s}_{c}_FA_fixed_analysis.xlsx'.format(s = heart + ltn, c = con))
 workbook = writer.book
 
+RatioWriter = pd.ExcelWriter('E5_{s}_{c}_FA_fixed_analysis_Ratios.xlsx'.format(s = heart + ltn, c = con))
+RatioWorkbook = RatioWriter.book
 ##########################################################################
 #Create sheet for Fwd,Bkwd col chart, can't do Chartsheet bc of p-values
 colChartBkwd_Fwd_data.to_excel(excel_writer = writer, sheet_name = 'FwdvsBkwd' , index = True)
@@ -358,15 +363,15 @@ chartsheet1.insert_chart('G2', colChart920_860)
 #################################################
 #Create chartsheet for 920v860 data ratios
 
-#Insert Ratio 960v860nm into excel
+#Insert Ratio 960v860nm into ratio excel file
 for key, df in colChart920v860_Rdata.items():
-    df.to_excel(excel_writer = writer, sheet_name = str(key), index = True)
+    df.to_excel(excel_writer = RatioWriter, sheet_name = str(key), index = True)
     
     # Make worksheet object for each channel in channels dictionary
-    worksheet = writer.sheets[str(key)]
+    worksheet = RatioWriter.sheets[str(key)]
     
     # Create a scatter chart object, FOV-channel specific chart, int. vs depth
-    scatterChart = workbook.add_chart({'type': 'scatter', 'subtype': 'straight_with_markers'})
+    scatterChart = RatioWorkbook.add_chart({'type': 'scatter', 'subtype': 'straight_with_markers'})
     for column in df[['T1', 'T2','T3']]:
         # Get the number of rows and column index
         max_row = len(df)
@@ -389,6 +394,42 @@ for key, df in colChart920v860_Rdata.items():
     
     # Insert the charts into the worksheet in field D2
     worksheet.insert_chart('I10', scatterChart)
+
+################################################################
+#Insert Ratio 960v860nm into ratio excel file
+for key, df in colChartFwdvBkwd_Rdata.items():
+    df.to_excel(excel_writer = RatioWriter, sheet_name = str(key), index = True)
+    
+    # Make worksheet object for each channel in channels dictionary
+    worksheet = RatioWriter.sheets[str(key)]
+    
+    # Create a scatter chart object, FOV-channel specific chart, int. vs depth
+    scatterChart = RatioWorkbook.add_chart({'type': 'scatter', 'subtype': 'straight_with_markers'})
+    for column in df[['T1', 'T2','T3']]:
+        # Get the number of rows and column index
+        max_row = len(df)
+        col_x = df.columns.get_loc('Depth') + 1
+        col_y = df.columns.get_loc(column) + 1
+        
+        # Create the scatter plot with error cols if T_SEM is equal to something, if not don't add error
+        scatterChart.add_series({
+            'name':       column,
+            'categories': [str(key), 1, col_x, max_row, col_x],
+            'values':     [str(key), 1, col_y, max_row, col_y],
+            'marker':     {'type': 'circle', 'size': 4},
+        })
+            
+    # Set name on axis
+    scatterChart.set_title({'name': key})
+    scatterChart.set_x_axis({'name': 'Depth'})
+    scatterChart.set_y_axis({'name': 'SHG signal',
+                      'major_gridlines': {'visible': False}})
+    
+    # Insert the charts into the worksheet in field D2
+    worksheet.insert_chart('I10', scatterChart)
+
+
+
 
 #####################################
 #create sheets from channels dictionary and populate with channel 
@@ -434,3 +475,4 @@ for key, df in channels.items():
         
 #close excel file       
 writer.close()
+RatioWriter.close()
