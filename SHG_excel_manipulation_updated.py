@@ -10,7 +10,7 @@ import os
 import pandas as pd
 
 #Ask User Heart and Location to fetch dataset and later create excel sheet with series name
-heart = 'H1'#input("Heart #: ")
+heart = 'H2'#input("Heart #: ")
 ltn = 'V1'#input("Location #: ")
 con = 'ctrl'#input("Condition of Heart (ex. ctrl, blebb): ")
 
@@ -36,7 +36,7 @@ dataT = dataO[ ["T1", "T2", "T3"] ].sub(dataBavg['B_avg'], axis=0)
 
 #Add channel column, recreates channelwise parsing of image to measure data points
 numCh = 9
-Z_slices = 24#int(input('Number of Z slices: '))
+Z_slices = 26#int(input('Number of Z slices: '))
 total = numCh*Z_slices
 rows = []
 
@@ -107,17 +107,18 @@ for key, df in channels.items():
 #Channels5 dict stores the index of max val for each ROI
 channels5 = {'channel_1': channels35_MaxVal['channel_3'],'channel_2': channels35_MaxVal['channel_4'],'channel_5': channels35_MaxVal['channel_7'],'channel_6': channels35_MaxVal['channel_8']}
 
+
 for key, df in channels5.items():
     ROI_avgs = []
     for column in channels[key][['T1', 'T2','T3']]:
+        if df[column][0] == df[column][0]:
             min = int(df.iloc[0][column] - 3)
             max = int(df.iloc[0][column] + 3)
             #list of index values from min2max
             min2max = list(range(min, max+1, 1))
             ROI_avgs.append(float(channels[key][column].iloc[min2max].mean(axis=0)))
-     
-            
-
+        else:
+            ROI_avgs.append(math.nan)
     df1 = pd.DataFrame(ROI_avgs, columns = ['T_avgs'])
     channels[key] = pd.concat([channels[key],df1], ignore_index= False, axis=1)
 
@@ -129,9 +130,8 @@ for key, df in channels.items():
 
 #Add column T_SEM, Standard error of ROI averages
 for key, df in channels.items():
-    df1 = pd.DataFrame([df['T_avgs'].std()/math.sqrt(3)], columns=['T_SEM'])
+    df1 = pd.DataFrame([df['T_avgs'].std()/math.sqrt(df['T_avgs'].count())], columns=['T_SEM'])
     channels[key] = pd.concat([df,df1], ignore_index= False, axis=1)
-
 
 
 
