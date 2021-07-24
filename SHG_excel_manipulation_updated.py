@@ -10,7 +10,7 @@ import os
 import pandas as pd
 
 #Ask User Heart and Location to fetch dataset and later create excel sheet with series name
-heart = 'H2'#input("Heart #: ")
+heart = 'H1'#input("Heart #: ")
 ltn = 'V1'#input("Location #: ")
 con = 'ctrl'#input("Condition of Heart (ex. ctrl, blebb): ")
 
@@ -36,7 +36,7 @@ dataT = dataO[ ["T1", "T2", "T3"] ].sub(dataBavg['B_avg'], axis=0)
 
 #Add channel column, recreates channelwise parsing of image to measure data points
 numCh = 9
-Z_slices = 26#int(input('Number of Z slices: '))
+Z_slices = 24#int(input('Number of Z slices: '))
 total = numCh*Z_slices
 rows = []
 
@@ -105,10 +105,10 @@ for key, df in channels.items():
         channels[key] = pd.concat([df,df1], ignore_index= False, axis=1)
 
 #Channels5 dict stores the index of max val for each ROI
-channels5 = {'channel_1': channels35_MaxVal['channel_3'],'channel_2': channels35_MaxVal['channel_4'],'channel_5': channels35_MaxVal['channel_7'],'channel_6': channels35_MaxVal['channel_8']}
+channels5_MaxVal_refd = {'channel_1': channels35_MaxVal['channel_3'],'channel_2': channels35_MaxVal['channel_4'],'channel_5': channels35_MaxVal['channel_7'],'channel_6': channels35_MaxVal['channel_8']}
 
-
-for key, df in channels5.items():
+#calculate averages using Max val based of 35% peaks
+for key, df in channels5_MaxVal_refd.items():
     ROI_avgs = []
     for column in channels[key][['T1', 'T2','T3']]:
         if df[column][0] == df[column][0]:
@@ -214,54 +214,140 @@ colChartBkwd_Fwd_data['35% 860nm'][4] = ttest_ind(channels['channel_7']['T_avgs'
 colChartBkwd_Fwd_data = colChartBkwd_Fwd_data.rename(index= {0:'Bkwd', 1:'Fwd', 2:'Bkwd_SEM', 3:'Fwd_SEM', 4: 'P_value'})
 
 
+
+
+###########################################
 #Ratio panda (920,860nm)
-colChart920v860_Rdata = {'5% Bkwd': pd.DataFrame(None),'5% Fwd': pd.DataFrame(None),'35% Bkwd': pd.DataFrame(None),'35% Fwd': pd.DataFrame(None)}
+Rdata_920v860 = {'5% Bkwd': pd.DataFrame(None),'5% Fwd': pd.DataFrame(None),'35% Bkwd': pd.DataFrame(None),'35% Fwd': pd.DataFrame(None)}
 #Divide 920 channels by 860 and add depth column from channel_1 in channels dic
 for column in channels['channel_1'][['T1','T2','T3']]:
-    colChart920v860_Rdata['5% Bkwd'][column]= channels['channel_1'][column]/channels['channel_5'][column]
-colChart920v860_Rdata['5% Bkwd'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+    Rdata_920v860['5% Bkwd'][column]= channels['channel_1'][column]/channels['channel_5'][column]
+Rdata_920v860['5% Bkwd'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
 
 for column in channels['channel_2'][['T1','T2','T3']]:
-    colChart920v860_Rdata['5% Fwd'][column]= channels['channel_2'][column]/channels['channel_6'][column]
-colChart920v860_Rdata['5% Fwd'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+    Rdata_920v860['5% Fwd'][column]= channels['channel_2'][column]/channels['channel_6'][column]
+Rdata_920v860['5% Fwd'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
     
 for column in channels['channel_3'][['T1','T2','T3']]:
-    colChart920v860_Rdata['35% Bkwd'][column]= channels['channel_3'][column]/channels['channel_7'][column]
-colChart920v860_Rdata['35% Bkwd'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+    Rdata_920v860['35% Bkwd'][column]= channels['channel_3'][column]/channels['channel_7'][column]
+Rdata_920v860['35% Bkwd'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
     
 for column in channels['channel_4'][['T1','T2','T3']]:
-    colChart920v860_Rdata['35% Fwd'][column]= channels['channel_4'][column]/channels['channel_8'][column]
-colChart920v860_Rdata['35% Fwd'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+    Rdata_920v860['35% Fwd'][column]= channels['channel_4'][column]/channels['channel_8'][column]
+Rdata_920v860['35% Fwd'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
 
-for key, df in colChart920v860_Rdata.items():
+for key, df in Rdata_920v860.items():
     #remove -inf and infs (less than -1B and greater than 1B )and replace with NAN
-    colChart920v860_Rdata[key] = df.mask(df < -1000000000.0 )
-    colChart920v860_Rdata[key] = colChart920v860_Rdata[key].mask(df > 1000000000.0 )
+    Rdata_920v860[key] = df.mask(df < -1000000000.0 )
+    Rdata_920v860[key] = Rdata_920v860[key].mask(df > 1000000000.0 )
+
+#Calculate means of ratios (920,860nm) using ref'd max value of channel 4
+for key, df in Rdata_920v860.items():
+    ROI_avgs = []
+    for column in Rdata_920v860[key][['T1', 'T2','T3']]:
+            #check for max equal to NaN
+        if channels35_MaxVal['channel_4'][column][0] == channels35_MaxVal['channel_4'][column][0]:
+            min = int(channels35_MaxVal['channel_4'][column][0] - 3)
+            max = int(channels35_MaxVal['channel_4'][column][0] + 3)
+            #list of index values from min2max
+            min2max = list(range(min, max+1, 1))
+            ROI_avgs.append(float(Rdata_920v860[key][column].iloc[min2max].mean(axis=0)))
+        else:
+            ROI_avgs.append(math.nan)
+    df1 = pd.DataFrame(ROI_avgs, columns = ['T_avgs'])
+    Rdata_920v860[key] = pd.concat([Rdata_920v860[key],df1], ignore_index= False, axis=1)
+
+  
+#Add column T_Favg, average of ROI averages
+for key, df in Rdata_920v860.items():
+    df1 = pd.DataFrame([df['T_avgs'].mean()], columns=['T_Favg'])
+    Rdata_920v860[key] = pd.concat([df,df1], ignore_index= False, axis=1)
+
+#Add column T_SEM, Standard error of ROI averages
+for key, df in Rdata_920v860.items():
+    df1 = pd.DataFrame([df['T_avgs'].std()/math.sqrt(df['T_avgs'].count())], columns=['T_SEM'])
+    Rdata_920v860[key] = pd.concat([df,df1], ignore_index= False, axis=1)
+    
+    
+#Make Panda for col chart (920,860nm ratio) and 920,860nm dictionary
+channels920_860 = {'channel_1':'channel_5', 'channel_2':'channel_6','channel_3':'channel_7','channel_4':'channel_8'}
+blank4x3 = [[None,None,None,None],[None,None,None,None],[None,None,None,None],]
+colChart920_860Rdata = pd.DataFrame(blank4x3, columns= ['5% Bkwd','5% Fwd','35% Bkwd','35% Fwd'])
+
+colChart920_860Rdata['5% Bkwd'][0] = Rdata_920v860['5% Bkwd']['T_Favg'][0]
+colChart920_860Rdata['5% Fwd'][0] = Rdata_920v860['5% Fwd']['T_Favg'][0]
+colChart920_860Rdata['35% Bkwd'][0] = Rdata_920v860['35% Bkwd']['T_Favg'][0]
+colChart920_860Rdata['35% Fwd'][0] = Rdata_920v860['35% Fwd']['T_Favg'][0]
+
+#SEM
+colChart920_860Rdata['5% Bkwd'][1] = Rdata_920v860['5% Bkwd']['T_SEM'][0]
+colChart920_860Rdata['5% Fwd'][1] = Rdata_920v860['5% Fwd']['T_SEM'][0]
+colChart920_860Rdata['35% Bkwd'][1] = Rdata_920v860['35% Bkwd']['T_SEM'][0]
+colChart920_860Rdata['35% Fwd'][1] = Rdata_920v860['35% Fwd']['T_SEM'][0]
 
 
+#Perform two tailed T-test, unequal variance between 3 averages of T_avgs
+'''
+colChart920_860Rdata['5% Bkwd'][3] = ttest_ind(Rdata_920v860['5% Bkwd']['T_avgs'][0:3], Rdata_920v860['channel_5']['T_avgs'][0:3], equal_var= False)[1]
+colChart920_860Rdata['5% Fwd'][3] = ttest_ind(Rdata_920v860['channel_2']['T_avgs'][0:3], Rdata_920v860['channel_6']['T_avgs'][0:3], equal_var= False)[1]
+colChart920_860Rdata['35% Bkwd'][3] = ttest_ind(Rdata_920v860['channel_3']['T_avgs'][0:3], Rdata_920v860['channel_7']['T_avgs'][0:3], equal_var= False)[1]
+colChart920_860Rdata['35% Fwd'][3] = ttest_ind(Rdata_920v860['channel_4']['T_avgs'][0:3], Rdata_920v860['channel_8']['T_avgs'][0:3], equal_var= False)[1]
+'''
+colChart920_860Rdata = colChart920_860Rdata.rename(index= {0:'920v860R_T_Favg', 1:'920v860R__SEM', 2:'P_value'})
+
+
+
+#######################################
 #Ratio panda (Fwd, Bkwd)
-colChartFwdvBkwd_Rdata = {'5% 920nm': pd.DataFrame(None),'35% 920nm': pd.DataFrame(None),'5% 860nm': pd.DataFrame(None),'35% 860nm': pd.DataFrame(None)}
+FwdvBkwd_Rdata = {'5% 920nm': pd.DataFrame(None),'35% 920nm': pd.DataFrame(None),'5% 860nm': pd.DataFrame(None),'35% 860nm': pd.DataFrame(None)}
 #Divide Fwd channels by Bkwd and add depth column from channel_1 in channels dic
 for column in channels['channel_1'][['T1','T2','T3']]:
-    colChartFwdvBkwd_Rdata['5% 920nm'][column]= channels['channel_2'][column]/channels['channel_1'][column]
-colChartFwdvBkwd_Rdata['5% 920nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+    FwdvBkwd_Rdata['5% 920nm'][column]= channels['channel_2'][column]/channels['channel_1'][column]
+FwdvBkwd_Rdata['5% 920nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
 
 for column in channels['channel_2'][['T1','T2','T3']]:
-    colChartFwdvBkwd_Rdata['35% 920nm'][column]= channels['channel_4'][column]/channels['channel_3'][column]
-colChartFwdvBkwd_Rdata['35% 920nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+    FwdvBkwd_Rdata['35% 920nm'][column]= channels['channel_4'][column]/channels['channel_3'][column]
+FwdvBkwd_Rdata['35% 920nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
     
 for column in channels['channel_3'][['T1','T2','T3']]:
-    colChartFwdvBkwd_Rdata['5% 860nm'][column]= channels['channel_6'][column]/channels['channel_5'][column]
-colChartFwdvBkwd_Rdata['5% 860nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+    FwdvBkwd_Rdata['5% 860nm'][column]= channels['channel_6'][column]/channels['channel_5'][column]
+FwdvBkwd_Rdata['5% 860nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
     
 for column in channels['channel_4'][['T1','T2','T3']]:
-    colChartFwdvBkwd_Rdata['35% 860nm'][column]= channels['channel_8'][column]/channels['channel_7'][column]
-colChartFwdvBkwd_Rdata['35% 860nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
+    FwdvBkwd_Rdata['35% 860nm'][column]= channels['channel_8'][column]/channels['channel_7'][column]
+FwdvBkwd_Rdata['35% 860nm'].insert(column = 'Depth', loc = 0, value = channels['channel_1']['Depth'])
 
-for key, df in colChartFwdvBkwd_Rdata.items():
+for key, df in FwdvBkwd_Rdata.items():
     #remove -inf and infs (less than -1B and greater than 1B )and replace with NAN
-    colChartFwdvBkwd_Rdata[key] = df.mask(df < -1000000000.0 )
-    colChartFwdvBkwd_Rdata[key] = colChartFwdvBkwd_Rdata[key].mask(df > 1000000000.0 )
+    FwdvBkwd_Rdata[key] = df.mask(df < -1000000000.0 )
+    FwdvBkwd_Rdata[key] = FwdvBkwd_Rdata[key].mask(df > 1000000000.0 )
+    
+#Calculate means of ratios (Fwd,Bkwd) using ref'd max values of channel 4
+for key, df in FwdvBkwd_Rdata.items():
+    ROI_avgs = []
+    for column in FwdvBkwd_Rdata[key][['T1', 'T2','T3']]:
+            #check for max equal to NaN
+        if channels35_MaxVal['channel_4'][column][0] == channels35_MaxVal['channel_4'][column][0]:
+            min = int(channels35_MaxVal['channel_4'][column][0] - 3)
+            max = int(channels35_MaxVal['channel_4'][column][0] + 3)
+            #list of index values from min2max
+            min2max = list(range(min, max+1, 1))
+            ROI_avgs.append(float(FwdvBkwd_Rdata[key][column].iloc[min2max].mean(axis=0)))
+        else:
+            ROI_avgs.append(math.nan)
+    df1 = pd.DataFrame(ROI_avgs, columns = ['T_avgs'])
+    FwdvBkwd_Rdata[key] = pd.concat([FwdvBkwd_Rdata[key],df1], ignore_index= False, axis=1)
+
+  
+#Add column T_Favg, average of ROI averages
+for key, df in FwdvBkwd_Rdata.items():
+    df1 = pd.DataFrame([df['T_avgs'].mean()], columns=['T_Favg'])
+    FwdvBkwd_Rdata[key] = pd.concat([df,df1], ignore_index= False, axis=1)
+
+#Add column T_SEM, Standard error of ROI averages
+for key, df in FwdvBkwd_Rdata.items():
+    df1 = pd.DataFrame([df['T_avgs'].std()/math.sqrt(df['T_avgs'].count())], columns=['T_SEM'])
+    FwdvBkwd_Rdata[key] = pd.concat([df,df1], ignore_index= False, axis=1)
         
 
 ##########
@@ -275,6 +361,7 @@ workbook = writer.book
 
 RatioWriter = pd.ExcelWriter('E5_{s}_{c}_FA_fixed_analysis_Ratios.xlsx'.format(s = heart + ltn, c = con))
 RatioWorkbook = RatioWriter.book
+
 ##########################################################################
 #Create sheet for Fwd,Bkwd col chart, can't do Chartsheet bc of p-values
 colChartBkwd_Fwd_data.to_excel(excel_writer = writer, sheet_name = 'FwdvsBkwd' , index = True)
@@ -360,11 +447,44 @@ colChart920_860.set_y_axis({'name': 'SHG signal',
 #Insert chartsheet
 chartsheet1.insert_chart('G2', colChart920_860)
 
-#################################################
-#Create chartsheet for 920v860 data ratios
 
+#################################################
+#Create sheet for 920/860 ratios col chart, can't do Chartsheet bc of p-values
+colChart920_860Rdata.to_excel(excel_writer = RatioWriter, sheet_name = '920v860_ratios' , index = True)
+chartsheet920_860R = RatioWriter.sheets['920v860_ratios']
+
+#create chart object for 920,860nm ratio col charts
+colChart920_860R = RatioWorkbook.add_chart({'type': 'column'})
+
+#save length of values length in colChart920_860Rdata_data panda
+col_y_920_860R = len(colChart920_860Rdata.columns)
+
+#Add Ratios series from colChart920_860R object
+colChart920_860R.add_series({
+    'categories': ['920v860_ratios', 0, 1, 0, col_y_920_860R],
+    'values':     ['920v860_ratios', 1, 1, 1, col_y_920_860R],
+    'y_error_bars': {
+        'type':         'custom',
+        'plus_values':  list(colChart920_860Rdata.iloc[1]),
+        'minus_values': list(colChart920_860Rdata.iloc[1]),}
+})
+
+
+# Set name on axis of colChartBkwd_Fwd object and insert to 920vs860nm sheet
+colChart920_860R.set_title({'name': '920v860 Ratios'})
+colChart920_860R.set_x_axis({'name': 'Groups'})
+colChart920_860R.set_y_axis({'name': 'SHG signal Ratio',
+                  'major_gridlines': {'visible': True}})
+colChart920_860R.set_legend({'none': True})
+
+#Insert chartsheet
+chartsheet920_860R.insert_chart('G2', colChart920_860R)
+
+
+#################################################
+#Create chartsheet for 920v860 data ratios scatterplots
 #Insert Ratio 960v860nm into ratio excel file
-for key, df in colChart920v860_Rdata.items():
+for key, df in Rdata_920v860.items():
     df.to_excel(excel_writer = RatioWriter, sheet_name = str(key), index = True)
     
     # Make worksheet object for each channel in channels dictionary
@@ -392,12 +512,13 @@ for key, df in colChart920v860_Rdata.items():
     scatterChart.set_y_axis({'name': 'SHG signal',
                       'major_gridlines': {'visible': False}})
     
-    # Insert the charts into the worksheet in field D2
-    worksheet.insert_chart('I10', scatterChart)
+    # Insert the charts into the worksheet in field I5
+    worksheet.insert_chart('I5', scatterChart)
 
 ################################################################
+
 #Insert Ratio 960v860nm into ratio excel file
-for key, df in colChartFwdvBkwd_Rdata.items():
+for key, df in FwdvBkwd_Rdata.items():
     df.to_excel(excel_writer = RatioWriter, sheet_name = str(key), index = True)
     
     # Make worksheet object for each channel in channels dictionary
@@ -471,7 +592,7 @@ for key, df in channels.items():
                       'major_gridlines': {'visible': False}})
     
     # Insert the charts into the worksheet in field D2
-    worksheet.insert_chart('I10', scatterChart)
+    worksheet.insert_chart('I5', scatterChart)
         
 #close excel file       
 writer.close()
