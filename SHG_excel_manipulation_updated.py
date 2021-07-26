@@ -426,7 +426,9 @@ colChartBkwd_Fwd.add_series({
 colChartBkwd_Fwd.set_title({'name': 'FwdvsBkwd'})
 colChartBkwd_Fwd.set_x_axis({'name': 'Groups'})
 colChartBkwd_Fwd.set_y_axis({'name': 'SHG signal',
-                  'major_gridlines': {'visible': True}})
+                  'major_gridlines': {'visible': True},
+                            'min': -0,
+                            'max': 4.5})
 
 #Insert chartsheet
 chartsheet0.insert_chart('G2', colChartBkwd_Fwd)
@@ -469,7 +471,9 @@ colChart920_860.add_series({
 colChart920_860.set_title({'name': '920vs860nm'})
 colChart920_860.set_x_axis({'name': 'Groups'})
 colChart920_860.set_y_axis({'name': 'SHG signal',
-                  'major_gridlines': {'visible': True}})
+                  'major_gridlines': {'visible': True},
+                            'min': -0,
+                            'max': 4.5})
 
 #Insert chartsheet
 chartsheet1.insert_chart('G2', colChart920_860)
