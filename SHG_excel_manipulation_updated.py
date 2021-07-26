@@ -10,8 +10,8 @@ import os
 import pandas as pd
 
 #Ask User Heart and Location to fetch dataset and later create excel sheet with series name
-heart = 'H1'#input("Heart #: ")
-ltn = 'V1'#input("Location #: ")
+heart = input("Heart #: ")
+ltn = input("Location #: ")
 con = 'ctrl'#input("Condition of Heart (ex. ctrl, blebb): ")
 
 #Set working directory
@@ -36,12 +36,11 @@ dataT = dataO[ ["T1", "T2", "T3"] ].sub(dataBavg['B_avg'], axis=0)
 
 #Add channel column, recreates channelwise parsing of image to measure data points
 numCh = 9
-Z_slices = 24#int(input('Number of Z slices: '))
-total = numCh*Z_slices
 rows = []
 
+#take length of dataO to add channelwise parse
 j=1
-for i in range(total):
+for i in range(len(dataO)):
     rows.append(j)
     j = j+1
     if j == numCh+1:
