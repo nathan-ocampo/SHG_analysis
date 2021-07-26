@@ -501,7 +501,9 @@ colChart920_860R.add_series({
 colChart920_860R.set_title({'name': '920v860 Ratios'})
 colChart920_860R.set_x_axis({'name': 'Groups'})
 colChart920_860R.set_y_axis({'name': 'SHG signal Ratio',
-                  'major_gridlines': {'visible': True}})
+                  'major_gridlines': {'visible': True},
+                            'min': -2,
+                            'max': 2})
 colChart920_860R.set_legend({'none': True})
 
 #Insert chartsheet
@@ -534,7 +536,9 @@ colChartBkwd_FwdR.add_series({
 colChartBkwd_FwdR.set_title({'name': 'BkwdvFwd_ratios'})
 colChartBkwd_FwdR.set_x_axis({'name': 'Groups'})
 colChartBkwd_FwdR.set_y_axis({'name': 'SHG signal Ratio',
-                  'major_gridlines': {'visible': True}})
+                  'major_gridlines': {'visible': True},
+                  'min': 0,
+                  'max': .1})
 colChartBkwd_FwdR.set_legend({'none': True})
 
 #Insert chartsheet
